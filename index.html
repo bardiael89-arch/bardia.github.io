@@ -63,13 +63,12 @@
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
   * { box-sizing: inherit; margin: 0; padding: 0; }
-  html { scroll-behavior: smooth; scroll-padding-top: calc(70px + env(safe-area-inset-top, 0px)); }
+  html { scroll-behavior: smooth; scroll-padding-top: calc(70px + env(safe-area-inset-top, 0px)); overflow-x: hidden; }
   body {
     background: var(--bg);
     color: var(--text);
     font-family: var(--font-fa);
     line-height: 1.8;
-    overflow-x: hidden;
   }
   ::selection { background: var(--purple); color: #0a0e14; }
 
@@ -93,6 +92,55 @@
     background: linear-gradient(90deg, var(--carbon), var(--purple));
     z-index: 200;
     transition: width .08s linear;
+  }
+
+  /* ---------- QUICK DOCK (bottom) ---------- */
+  .dock-wrap {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    z-index: 150;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+    pointer-events: none;
+  }
+  .dock-label {
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    color: var(--text-dim);
+    background: rgba(13,18,25,0.85);
+    border: 1px solid var(--border);
+    padding: 5px 14px;
+    border-radius: 20px;
+    margin-bottom: 10px;
+    backdrop-filter: blur(8px);
+    transition: color .2s ease;
+  }
+  .dock {
+    display: flex;
+    gap: 4px;
+    padding: 7px;
+    border-radius: 26px;
+    border: 1px solid var(--border-bright);
+    background: rgba(10,14,20,0.78);
+    backdrop-filter: blur(14px);
+    box-shadow: 0 12px 34px -14px rgba(0,0,0,0.55);
+    pointer-events: auto;
+  }
+  .dock-item {
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+    color: var(--text-dim);
+    transition: background .25s ease, color .25s ease, transform .25s ease;
+  }
+  .dock-item:hover { transform: translateY(-3px); color: var(--text); }
+  .dock-item.active { background: rgba(166,133,255,0.16); color: var(--purple); transform: translateY(-2px); }
+  @media (max-width: 380px) {
+    .dock-item { width: 33px; height: 33px; font-size: 14px; }
+    .dock { gap: 1px; padding: 6px; }
   }
 
   /* ---------- NAV ---------- */
@@ -127,6 +175,7 @@
   }
   .nav-links a { transition: color .25s ease; position: relative; }
   .nav-links a:hover { color: var(--text); }
+  .nav-links a.active { color: var(--purple); }
   .nav-links a:focus-visible, a:focus-visible { outline: 2px solid var(--carbon); outline-offset: 3px; border-radius: 3px; }
   @media (max-width: 640px) { .nav-links { display: none; } }
 
@@ -274,10 +323,10 @@
   }
   .avatar-core span {
     font-family: var(--font-mono);
-    font-size: 2.2rem;
+    font-size: 1.9rem;
     font-weight: 700;
     color: var(--purple);
-    letter-spacing: -0.02em;
+    letter-spacing: -0.01em;
   }
   .avatar-pulse {
     position: absolute;
@@ -292,6 +341,15 @@
   }
   @media (prefers-reduced-motion: reduce) {
     .avatar-orbit, .orbit-chip, .avatar-pulse { animation: none !important; }
+  }
+
+  @media (hover: none) {
+    .dock-item:active { background: rgba(166,133,255,0.2); color: var(--purple); }
+    .contact-card:active { border-color: var(--carbon-dim); transform: translateY(-2px); }
+    .project-card:active { border-color: var(--purple-dim); transform: translateY(-2px); }
+    .lang-card:active { border-color: var(--purple-dim); }
+    .chip:active { border-color: var(--purple); color: var(--purple); }
+    .btn:active { transform: translateY(-1px); }
   }
 
   /* ---------- SECTION SHELL ---------- */
@@ -337,13 +395,43 @@
     border: 1px solid var(--border-bright);
     background: var(--bg-card);
     color: var(--text-dim);
-    transition: all .2s ease;
+    transition: border-color .2s ease, color .2s ease, transform .2s ease, opacity .5s ease, box-shadow .3s ease;
+    opacity: 0;
+    transform: translateY(10px) scale(.95);
   }
+  .chips.in .chip { opacity: 1; transform: translateY(0) scale(1); }
   .skill-group.known .chip:hover { border-color: var(--purple); color: var(--purple); transform: translateY(-2px); }
-  .skill-group.learning .chip { border-style: dashed; }
+  .skill-group.learning .chip {
+    border-style: dashed;
+    position: relative;
+    padding-left: 26px;
+  }
+  .skill-group.learning .chip::before {
+    content: '';
+    position: absolute;
+    left: 11px; top: 50%;
+    width: 6px; height: 6px;
+    margin-top: -3px;
+    border-radius: 50%;
+    background: var(--carbon);
+    animation: dotPulse 1.6s ease-in-out infinite;
+  }
   .skill-group.learning .chip:hover { border-color: var(--carbon); color: var(--carbon); transform: translateY(-2px); }
-  .skill-group.future .chip { opacity: .8; }
+  .skill-group.future .chip { opacity: .85; animation: futureGlow 3.2s ease-in-out infinite; }
+  .skill-group.future .chips:not(.in) .chip { animation-play-state: paused; }
   .skill-group.future .chip:hover { border-color: var(--carbon-dim); color: var(--carbon); opacity: 1; }
+  @keyframes dotPulse {
+    0%, 100% { opacity: .35; transform: scale(.8); }
+    50% { opacity: 1; transform: scale(1.2); }
+  }
+  @keyframes futureGlow {
+    0%, 100% { box-shadow: 0 0 0 rgba(166,133,255,0); }
+    50% { box-shadow: 0 0 14px rgba(166,133,255,0.2); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .chip { opacity: 1 !important; transform: none !important; }
+    .skill-group.learning .chip::before, .skill-group.future .chip { animation: none !important; }
+  }
 
   /* ---------- PROJECTS ---------- */
   .projects-grid {
@@ -589,7 +677,7 @@
   .copy-btn:hover { color: var(--purple); border-color: var(--purple-dim); }
 
   /* ---------- FOOTER ---------- */
-  footer { padding: 70px 0 50px; text-align: center; }
+  footer { padding: 70px 0 calc(120px + env(safe-area-inset-bottom, 0px)); text-align: center; }
   .footer-quote {
     font-family: var(--font-mono);
     font-style: italic;
@@ -616,6 +704,19 @@
 <body>
 
 <div id="scroll-progress"></div>
+
+<div class="dock-wrap">
+  <div class="dock-label" id="dock-label">درباره من</div>
+  <nav class="dock" aria-label="دسترسی سریع">
+    <a class="dock-item active" href="#about" data-sec="about" data-label="درباره من" title="درباره من">👤</a>
+    <a class="dock-item" href="#skills" data-sec="skills" data-label="مهارت‌ها" title="مهارت‌ها">🧠</a>
+    <a class="dock-item" href="#languages" data-sec="languages" data-label="زبان‌ها" title="زبان‌ها">💻</a>
+    <a class="dock-item" href="#projects" data-sec="projects" data-label="پروژه‌ها" title="پروژه‌ها">🗂️</a>
+    <a class="dock-item" href="#journey" data-sec="journey" data-label="مسیر" title="مسیر">🧭</a>
+    <a class="dock-item" href="#resume" data-sec="resume" data-label="رزومه" title="رزومه">📄</a>
+    <a class="dock-item" href="#contact" data-sec="contact" data-label="ارتباط" title="ارتباط">✉️</a>
+  </nav>
+</div>
 
 <nav>
   <div class="nav-inner">
@@ -657,7 +758,7 @@
         <div class="orbit-chip" style="top:calc(50% - 17px); left:-17px;">🛡️</div>
       </div>
       <div class="avatar-pulse"></div>
-      <div class="avatar-core"><span class="ltr">BR</span></div>
+      <div class="avatar-core"><span class="ltr">B.R</span></div>
     </div>
   </div>
 </header>
@@ -871,15 +972,21 @@ const data = {
   ],
 };
 
-function chip(text) {
+function chip(text, i) {
   const s = document.createElement('span');
   s.className = 'chip';
   s.textContent = text;
+  s.style.transitionDelay = (i * 55) + 'ms';
   return s;
 }
 document.getElementById('chips-known').append(...data.skillsKnown.map(chip));
 document.getElementById('chips-learning').append(...data.skillsLearning.map(chip));
 document.getElementById('chips-future').append(...data.skillsFuture.map(chip));
+
+const chipsIo = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); chipsIo.unobserve(e.target); } });
+}, { threshold: 0.25 });
+document.querySelectorAll('.chips').forEach(el => chipsIo.observe(el));
 
 const projectsGrid = document.getElementById('projects-grid');
 data.projects.forEach((p, i) => {
@@ -894,10 +1001,6 @@ data.projects.forEach((p, i) => {
     </div>`;
   projectsGrid.appendChild(card);
 });
-const addSlot = document.createElement('div');
-addSlot.className = 'project-add';
-addSlot.textContent = '+ new project';
-projectsGrid.appendChild(addSlot);
 
 const timeline = document.getElementById('timeline');
 data.journey.forEach((t, i) => {
@@ -1034,6 +1137,28 @@ document.querySelectorAll('.reveal').forEach(el => io.observe(el));
   window.addEventListener('resize', init);
   init();
   step();
+})();
+
+/* ---- نشون دادن اینکه کاربر توی چه بخشی از سایته (نوار بالا + پنل پایین) ---- */
+(function scrollSpy() {
+  const sections = document.querySelectorAll('main section[id]');
+  const navLinks = document.querySelectorAll('.nav-links a');
+  const dockItems = document.querySelectorAll('.dock-item');
+  const dockLabel = document.getElementById('dock-label');
+  if (!sections.length) return;
+  const spyIo = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (!entry.isIntersecting) return;
+      const id = entry.target.id;
+      navLinks.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + id));
+      dockItems.forEach(a => {
+        const isActive = a.dataset.sec === id;
+        a.classList.toggle('active', isActive);
+        if (isActive && dockLabel) dockLabel.textContent = a.dataset.label;
+      });
+    });
+  }, { rootMargin: '-45% 0px -45% 0px', threshold: 0 });
+  sections.forEach(s => spyIo.observe(s));
 })();
 
 /* ---- نوار پیشرفت اسکرول ---- */
